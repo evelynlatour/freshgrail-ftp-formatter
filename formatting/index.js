@@ -77,28 +77,108 @@ const formatFeed = () => {
       .replace(/\(|\)/g, ``);
 
     const tags = removeChars.split(` `).join(`, `);
-    const url = removeChars.replace(/\./g, `-`).split(` `).join(`-`);
+    const url = removeChars
+      .replace(/\./g, `-`)
+      .split(` `)
+      .join(`-`);
     item.splice(2, 0, tags);
     item.splice(0, 0, url);
   });
 
-  console.log(formatIndices);
-  // at this point should have an array for each product that contains the following
-  // [url, title, desc, tags, categories, imageUrl, price, affiliate link]
-
+  /* At this point an array for each product contains the following as strings:
+  [url, title, desc, tags, categories, imageUrl, price, affiliate link] */
   return formatIndices;
 };
 
-formatFeed();
+// formatFeed();
 
-// const createCSV = (headers, dataset);
-
-const example2 = [
-  `adidas ZX Flux Xeno All Star Black`,
-  `533b62ae-29d0-4688-8fdf-54e29ed8ca2b`, // can only be 20 chars for SS, leave blank
-  `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13417612943&type=15&murl=https%3A%2F%2Fstockx.com%2Fadidas-zx-flux-xeno-all-star-black`,
-  `https://stockx.imgix.net/Adidas-ZX-Flux-Xeno-All-Star-Black-Product.jpg`,
-  `adidas ZX Flux Xeno All Star Black`,
-  `100.00`,
-  `men`,
+const headers = [
+  `url`,
+  `title`,
+  `desc`,
+  `tags`,
+  `categories`,
+  `imageUrl`,
+  `price`,
+  `affiliate link`,
 ];
+
+const exampleData = [
+  [
+    `Converse-Chuck-Taylor-All-Star-70s-Hi-Kith-x-Coca-Cola-Red`,
+    `Converse Chuck Taylor All-Star 70s Hi Kith x Coca Cola Red`,
+    `Kith and Coca-Cola have been dropping some of the most hyped Chuck Taylors this side of the 1970s. This iteration, known as the "USA" edition, comes in a clean garnet, white and egret colorway. Upping the design ante, "USA" sports a red denim upper with white "Coca-Cola" embroidery, egret off-white vulcanized sole with Kith branding, and a full translucent green outsole. These Chucks dropped in August of 2018, retailing for, $150. If you love classic brands, then you need to make sure you cop a pair of these new American classics.`,
+    `Converse, Chuck, Taylor, All-Star, 70s, Hi, Kith, x, Coca, Cola, Red`,
+    `men`,
+    `https://stockx.imgix.net/Converse-Chuck-Taylor-All-Star-70s-Hi-Kith-Red-Product.jpg`,
+    `245.00`,
+    `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13279338524&type=15&murl=https%3A%2F%2Fstockx.com%2Fconverse-chuck-taylor-all-star-70s-hi-kith-usa`,
+  ],
+  [
+    `Nike-React-Element-87-Undercover-Volt`,
+    `Nike React Element 87 Undercover Volt`,
+    `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are for you.`,
+    `Nike, React, Element, 87, Undercover, Volt`,
+    `men`,
+    `https://stockx.imgix.net/Nike-React-Element-87-Undercover-Volt-Product.jpg`,
+    `230.00`,
+    `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13371458981&type=15&murl=https%3A%2F%2Fstockx.com%2Fnike-react-element-87-undercover-volt`,
+  ],
+];
+
+const correctHeaderData = [
+  [
+    `Nike-React-Element-87-Undercover-Volt`,
+    `Nike React Element 87 Undercover Volt`,
+    `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are for you.`,
+    `Physical`,
+    `Nike, React, Element, 87, Undercover, Volt`,
+    `men`,
+    `TRUE`,
+    `https://stockx.imgix.net/Nike-React-Element-87-Undercover-Volt-Product.jpg`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `230.00`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `1`,
+  ],
+];
+
+// Format for squareSpace upload csv format w/ correct headers
+const formatForSS = () => {
+
+};
+
+
+// Write to CSV & save file locally
+const createCSV = (headers, dataset) => {
+  // insert error handler in the event that the length of headers and dataset do not match
+  const escapeDescriptionQuotes = dataset.map((item) => {
+    const newDesc = item[2].replace(/"/g, `""`);
+    item[2] = newDesc;
+    return item;
+  });
+  const escapeCommasWithQuotes = escapeDescriptionQuotes.map(item =>
+    item.map((str) => {
+      if (str !== `,`) return `"${str}"`;
+    }));
+  return `${headers}\n${escapeCommasWithQuotes.reduce(
+    (acc, curr) => acc.concat(`${curr.join(`,`).trim()}\n`),
+    ``,
+  )}`.trim();
+};
+
+const csvFile = createCSV(squareSpaceHeaders, correctHeaderData);
+console.log(csvFile);
+
+fs.writeFileSync(`${__dirname}/../square-space-uploads/stockX.SS.csv`, csvFile, `utf8`);
