@@ -92,7 +92,87 @@ const formatFeed = () => {
 
 // formatFeed();
 
-const headers = [
+const correctHeaderData = [
+  [
+    `Nike-React-Element-87-Undercover-Volt`,
+    `Nike React Element 87 Undercover Volt`,
+    `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are for you.`,
+    `Physical`,
+    `Nike, React, Element, 87, Undercover, Volt`,
+    `men`,
+    `TRUE`,
+    `https://stockx.imgix.net/Nike-React-Element-87-Undercover-Volt-Product.jpg`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `230.00`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `,`,
+    `1`,
+  ],
+];
+
+const formatLink = (link, affiliateName) =>
+  `<p><h3 style="white-space: pre-wrap;"><strong>Buy now:</strong></h3></p><h3 style="white-space: pre-wrap;"><a href="${link}" target="_blank">${affiliateName}</a></h3>`;
+
+// Format for squareSpace upload csv format w/ correct headers
+const formatForSS = (products) => {
+  // put affiliate link into description
+  const descLinks = products.map((product) => {
+    const newDesc = product[2].concat(formatLink(product[7], `StockX`));
+    product[2] = newDesc;
+    product.splice(7, 1); // remove link, no longer needed
+    return product;
+  });
+
+  // insert commas for empty rows
+  descLinks.map((product) => {
+    product.splice(3, 0, `Physical`);
+    product.splice(6, 0, `TRUE`);
+    product.splice(8, 0, `,`, `,`, `,`, `,`, `,`, `,`, `,`);
+    product.splice(16, 0, `,`, `,`, `,`, `,`, `,`, `,`);
+    product.splice(21, 0, `1`);
+  });
+
+  return descLinks;
+};
+
+
+formatForSS(exampleData);
+
+// Write to CSV & save file locally
+const createCSV = (headers, dataset) => {
+  // insert error handler in the event that the length of headers and dataset do not match
+  const escapeDescriptionQuotes = dataset.map((item) => {
+    const newDesc = item[2].replace(/"/g, `""`);
+    item[2] = newDesc;
+    return item;
+  });
+  const escapeCommasWithQuotes = escapeDescriptionQuotes.map(item =>
+    item.map((str) => {
+      if (str !== `,`) return `"${str}"`;
+    }));
+  return `${headers}\n${escapeCommasWithQuotes.reduce(
+    (acc, curr) => acc.concat(`${curr.join(`,`).trim()}\n`),
+    ``,
+  )}`.trim();
+};
+
+// const csvFile = createCSV(squareSpaceHeaders, correctHeaderData);
+// console.log(csvFile);
+
+// fs.writeFileSync(`${__dirname}/../square-space-uploads/stockX.SS.csv`, csvFile, `utf8`);
+
+
+const exampleHeaders = [
   `url`,
   `title`,
   `desc`,
@@ -125,60 +205,3 @@ const exampleData = [
     `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13371458981&type=15&murl=https%3A%2F%2Fstockx.com%2Fnike-react-element-87-undercover-volt`,
   ],
 ];
-
-const correctHeaderData = [
-  [
-    `Nike-React-Element-87-Undercover-Volt`,
-    `Nike React Element 87 Undercover Volt`,
-    `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are for you.`,
-    `Physical`,
-    `Nike, React, Element, 87, Undercover, Volt`,
-    `men`,
-    `TRUE`,
-    `https://stockx.imgix.net/Nike-React-Element-87-Undercover-Volt-Product.jpg`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `230.00`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `1`,
-  ],
-];
-
-// Format for squareSpace upload csv format w/ correct headers
-const formatForSS = () => {
-
-};
-
-
-// Write to CSV & save file locally
-const createCSV = (headers, dataset) => {
-  // insert error handler in the event that the length of headers and dataset do not match
-  const escapeDescriptionQuotes = dataset.map((item) => {
-    const newDesc = item[2].replace(/"/g, `""`);
-    item[2] = newDesc;
-    return item;
-  });
-  const escapeCommasWithQuotes = escapeDescriptionQuotes.map(item =>
-    item.map((str) => {
-      if (str !== `,`) return `"${str}"`;
-    }));
-  return `${headers}\n${escapeCommasWithQuotes.reduce(
-    (acc, curr) => acc.concat(`${curr.join(`,`).trim()}\n`),
-    ``,
-  )}`.trim();
-};
-
-const csvFile = createCSV(squareSpaceHeaders, correctHeaderData);
-console.log(csvFile);
-
-fs.writeFileSync(`${__dirname}/../square-space-uploads/stockX.SS.csv`, csvFile, `utf8`);
