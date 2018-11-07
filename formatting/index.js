@@ -46,9 +46,8 @@ const filterFeed = () => {
 
 const formatFeed = () => {
   const feedData = filterFeed();
-  // remove indexes that are unnecessary --
-  // 0, 2, 3, 4, 7, 8, 10, 11, 12, 14 - 32, 34, 36 - 38
-  const keepIndices = [1, 5, 6, 9, 13, 33, 35];
+  // remove indexes that are not needed for squarespace content upload
+  const keepIndices = [1, 9, 33, 35, 6, 13, 5]; // quasi-order for SS upload
   const removedIndices = feedData.map((item) => {
     const newItem = [];
     for (const indexVal of keepIndices) {
@@ -56,49 +55,50 @@ const formatFeed = () => {
     }
     return newItem;
   });
-  console.log(removedIndices);
-  return removedIndices;
+
+  // filter out infant shoes
+  const formatIndices = removedIndices.filter(item => !item[6].includes(`infant`));
+
+  // create gender/age category
+  formatIndices.map((item) => {
+    let genderAge;
+    if (item[2].includes(`male`)) genderAge = `men`;
+    if (item[2].includes(`female`)) genderAge = `women`;
+    if (item[2].includes(`unisex`) && item[3].includes(`adult`)) genderAge = `unisex`;
+    if (item[2].includes(`unisex`) && item[3].includes(`kids`)) genderAge = `kids`;
+    item.splice(2, 2, genderAge);
+  });
+
+  // Create product tags and URL
+  formatIndices.map((item) => {
+    const removeChars = item[0]
+      .replace(/"/g, ``)
+      .replace(/'/g, ``)
+      .replace(/\(|\)/g, ``);
+
+    const tags = removeChars.split(` `).join(`, `);
+    const url = removeChars.replace(/\./g, `-`).split(` `).join(`-`);
+    item.splice(2, 0, tags);
+    item.splice(0, 0, url);
+  });
+
+  console.log(formatIndices);
+  // at this point should have an array for each product that contains the following
+  // [url, title, desc, tags, categories, imageUrl, price, affiliate link]
+
+  return formatIndices;
 };
 
-console.log(formatFeed());
+formatFeed();
 
 // const createCSV = (headers, dataset);
 
-const example = [
-  `\n13371458981`,
-  `Nike React Element 87 Undercover Volt`,
-  `83d216f9-7605-49bc-9cf7-54f02cfa9b66`,
-  `Apparel & Accessories`,
-  `Shoes`,
-  `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13371458981&type=15&murl=https%3A%2F%2Fstockx.com%2Fnike-react-element-87-undercover-volt`,
-  `https://stockx.imgix.net/Nike-React-Element-87-Undercover-Volt-Product.jpg`,
-  ``,
-  `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are`,
-  `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are for you.`,
-  ``,
-  `amount`,
-  ``,
-  `230.00`,
-  ``,
-  ``,
-  `Nike`,
-  `13.95`,
-  ``,
-  `377281C8-E219-40EC-BE2F-17103EC21050`,
-  `Nike`,
-  ``,
-  `in-stock`,
-  `664936316507`,
-  `60`,
-  `USD`,
-  ``,
-  `http://ad.linksynergy.com/fs-bin/show?id=<LSN EID>&bids=<LSN OID>.13371458981&type=15&subid=0`,
-  `Misc<LSN_DELIMITER>`,
-  `Product Type<LSN_DELIMITER>`,
-  `Size<LSN_DELIMITER>4.5`,
-  `Material<LSN_DELIMITER>`,
-  `Color<LSN_DELIMITER>Volt/University Red-Black-White`,
-  `Gender<LSN_DELIMITER>male`,
-  `Style<LSN_DELIMITER>`,
-  `Age<LSN_DELIMITER>adult`,
+const example2 = [
+  `adidas ZX Flux Xeno All Star Black`,
+  `533b62ae-29d0-4688-8fdf-54e29ed8ca2b`, // can only be 20 chars for SS, leave blank
+  `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13417612943&type=15&murl=https%3A%2F%2Fstockx.com%2Fadidas-zx-flux-xeno-all-star-black`,
+  `https://stockx.imgix.net/Adidas-ZX-Flux-Xeno-All-Star-Black-Product.jpg`,
+  `adidas ZX Flux Xeno All Star Black`,
+  `100.00`,
+  `men`,
 ];
