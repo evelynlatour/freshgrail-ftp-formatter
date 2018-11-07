@@ -1,0 +1,42 @@
+const brands = [
+  `Nike`,
+  `adidas`,
+  `Adidas`,
+  `Air Jordan`,
+  `Jordan`,
+  `Yeezy`,
+  `New Balance`,
+  `Saucony`,
+  `Under Armour`,
+  `Puma`,
+  `Timberland`,
+  `Uggs`,
+  `Clarks`,
+  `Fila`,
+  `Converse`,
+  `Asics`,
+];
+
+const squareSpaceHeaders = [
+  `Product URL`,
+  `Title`,
+  `Description`,
+  `Product Type`,
+  `Tags`,
+  `Categories`,
+  `Visible`,
+  `Hosted Image URLs`,
+  `SKU`,
+  `Option Name 1`,
+  `Option Value 1`,
+  `Price`,
+  `Sale Price`,
+  `On Sale`,
+  `Weight`,
+  `Length`,
+  `Width`,
+  `Height`,
+  `Stock`,
+];
+
+module.exports = { brands, squareSpaceHeaders };
