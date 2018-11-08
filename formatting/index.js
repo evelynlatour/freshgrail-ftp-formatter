@@ -18,9 +18,7 @@ const generate = require(`csv-generate`);
 const parse = require(`csv-parse`);
 const { brands, squareSpaceHeaders } = require(`./utils.js`);
 
-// const result = data.replace(/['"]+/g, ``);
-
-const filterFeed = () => {
+const readAndFilterFeed = () => {
   const data = fs.readFileSync(`${__dirname}/../ftp-downloads/stockX.TEST.txt`, `utf8`);
   // create array of strings, each index = 1 product string
   // turn each product into an array, with index strings being each column (product desc categories)
@@ -44,8 +42,8 @@ const filterFeed = () => {
   return uniqueEntries;
 };
 
-const formatFeed = () => {
-  const feedData = filterFeed();
+const transformDataFromFeed = () => {
+  const feedData = readAndFilterFeed();
   // remove indexes that are not needed for squarespace content upload
   const keepIndices = [1, 9, 33, 35, 6, 13, 5]; // quasi-order for SS upload
   const removedIndices = feedData.map((item) => {
@@ -57,10 +55,10 @@ const formatFeed = () => {
   });
 
   // filter out infant shoes
-  const formatIndices = removedIndices.filter(item => !item[6].includes(`infant`));
+  const products = removedIndices.filter(item => !item[6].includes(`infant`));
 
   // create gender/age category
-  formatIndices.map((item) => {
+  products.map((item) => {
     let genderAge;
     if (item[2].includes(`male`)) genderAge = `men`;
     if (item[2].includes(`female`)) genderAge = `women`;
@@ -70,7 +68,7 @@ const formatFeed = () => {
   });
 
   // Create product tags and URL
-  formatIndices.map((item) => {
+  products.map((item) => {
     const removeChars = item[0]
       .replace(/"/g, ``)
       .replace(/'/g, ``)
@@ -85,77 +83,53 @@ const formatFeed = () => {
     item.splice(0, 0, url);
   });
 
-  /* At this point an array for each product contains the following as strings:
-  [url, title, desc, tags, categories, imageUrl, price, affiliate link] */
-  return formatIndices;
-};
-
-// formatFeed();
-
-const correctHeaderData = [
-  [
-    `Nike-React-Element-87-Undercover-Volt`,
-    `Nike React Element 87 Undercover Volt`,
-    `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are for you.`,
-    `Physical`,
-    `Nike, React, Element, 87, Undercover, Volt`,
-    `men`,
-    `TRUE`,
-    `https://stockx.imgix.net/Nike-React-Element-87-Undercover-Volt-Product.jpg`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `230.00`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `,`,
-    `1`,
-  ],
-];
-
-const formatLink = (link, affiliateName) =>
-  `<p><h3 style="white-space: pre-wrap;"><strong>Buy now:</strong></h3></p><h3 style="white-space: pre-wrap;"><a href="${link}" target="_blank">${affiliateName}</a></h3>`;
-
-// Format for squareSpace upload csv format w/ correct headers
-const formatForSS = (products) => {
-  // put affiliate link into description
-  const descLinks = products.map((product) => {
+  // embed put affiliate link into description & remove from array
+  products.map((product) => {
     const newDesc = product[2].concat(formatLink(product[7], `StockX`));
     product[2] = newDesc;
     product.splice(7, 1); // remove link, no longer needed
     return product;
   });
 
-  // insert commas for empty rows
-  descLinks.map((product) => {
+  /* At this point an array for each product contains the following as strings:
+  [url, title, desc w/ html link, tags, categories, imageUrl, price] */
+  return products;
+};
+
+function formatLink(link, affiliateName) {
+  return `<p><h3 style="white-space: pre-wrap;"><strong>Buy now:</strong></h3></p><h3 style="white-space: pre-wrap;"><a href="${link}" target="_blank">${affiliateName}</a></h3>`;
+}
+
+// Format for squareSpace upload csv format w/ correct order of empty rows
+const formatForSS = (formattedProductArray) => {
+  formattedProductArray.map((product) => {
     product.splice(3, 0, `Physical`);
     product.splice(6, 0, `TRUE`);
     product.splice(8, 0, `,`, `,`, `,`, `,`, `,`, `,`, `,`);
     product.splice(16, 0, `,`, `,`, `,`, `,`, `,`, `,`);
-    product.splice(21, 0, `1`);
+    product.splice(22, 0, `1`);
   });
 
-  return descLinks;
+  return formattedProductArray;
 };
 
 
-formatForSS(exampleData);
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Write to CSV & save file locally
 const createCSV = (headers, dataset) => {
   // insert error handler in the event that the length of headers and dataset do not match
+
+  // escape double quotes that may exist in title & description
   const escapeDescriptionQuotes = dataset.map((item) => {
     const newDesc = item[2].replace(/"/g, `""`);
+    const newTitle = item[1].replace(/"/g, `""`);
     item[2] = newDesc;
+    item[1] = newTitle;
     return item;
   });
+
+  // escape commas by wrapping each string in double quotes
   const escapeCommasWithQuotes = escapeDescriptionQuotes.map(item =>
     item.map((str) => {
       if (str !== `,`) return `"${str}"`;
@@ -166,42 +140,9 @@ const createCSV = (headers, dataset) => {
   )}`.trim();
 };
 
-// const csvFile = createCSV(squareSpaceHeaders, correctHeaderData);
-// console.log(csvFile);
 
-// fs.writeFileSync(`${__dirname}/../square-space-uploads/stockX.SS.csv`, csvFile, `utf8`);
-
-
-const exampleHeaders = [
-  `url`,
-  `title`,
-  `desc`,
-  `tags`,
-  `categories`,
-  `imageUrl`,
-  `price`,
-  `affiliate link`,
-];
-
-const exampleData = [
-  [
-    `Converse-Chuck-Taylor-All-Star-70s-Hi-Kith-x-Coca-Cola-Red`,
-    `Converse Chuck Taylor All-Star 70s Hi Kith x Coca Cola Red`,
-    `Kith and Coca-Cola have been dropping some of the most hyped Chuck Taylors this side of the 1970s. This iteration, known as the "USA" edition, comes in a clean garnet, white and egret colorway. Upping the design ante, "USA" sports a red denim upper with white "Coca-Cola" embroidery, egret off-white vulcanized sole with Kith branding, and a full translucent green outsole. These Chucks dropped in August of 2018, retailing for, $150. If you love classic brands, then you need to make sure you cop a pair of these new American classics.`,
-    `Converse, Chuck, Taylor, All-Star, 70s, Hi, Kith, x, Coca, Cola, Red`,
-    `men`,
-    `https://stockx.imgix.net/Converse-Chuck-Taylor-All-Star-70s-Hi-Kith-Red-Product.jpg`,
-    `245.00`,
-    `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13279338524&type=15&murl=https%3A%2F%2Fstockx.com%2Fconverse-chuck-taylor-all-star-70s-hi-kith-usa`,
-  ],
-  [
-    `Nike-React-Element-87-Undercover-Volt`,
-    `Nike React Element 87 Undercover Volt`,
-    `What's better than the classic 90s' TV series "New York Undercover"? Nothing really, but the Nike React Element 87 Undercover Volt is close. First unveiled by Jun Takahasi at UNDERCOVER's Paris Fashion Week's FW18 show in March, these shoes feature 'UNDERCOVER by Jun Takahasi' stamped on the translucent yellow uppers, the cork footbed has been replaced with a mesh one, and the colors coordinate with the shoes' uppers. If you love Malik Yoba, Dick Wolf, UNDERCOVER, and Nike, then these jawns are for you.`,
-    `Nike, React, Element, 87, Undercover, Volt`,
-    `men`,
-    `https://stockx.imgix.net/Nike-React-Element-87-Undercover-Volt-Product.jpg`,
-    `230.00`,
-    `http://click.linksynergy.com/link?id=<LSN EID>&offerid=<LSN OID>.13371458981&type=15&murl=https%3A%2F%2Fstockx.com%2Fnike-react-element-87-undercover-volt`,
-  ],
-];
+// RUN
+const productData = transformDataFromFeed();
+const formattedData = formatForSS(productData);
+const csvFile = createCSV(squareSpaceHeaders, formattedData);
+fs.writeFileSync(`${__dirname}/../square-space-uploads/stockX.SS.csv`, csvFile, `utf8`);
