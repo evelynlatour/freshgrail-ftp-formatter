@@ -46,6 +46,12 @@ const unzipFile = (affiliateName, date) => {
     );
     console.log(`'${affiliateName}-feed_${date}' being unzipped to ftp-downloads...`.gray);
     fileToUnzip.pipe(gunzip).pipe(writeToFile);
+
+    // remove the gzipped file just to clean up the folder
+    fs.unlink(`${__dirname}/../ftp-downloads/${affiliateName}-feed_${date}.txt.gz`, (err) => {
+      if (err) throw err;
+      else console.log(`gzipped file removed`.gray);
+    });
   } catch (err) {
     console.log(err);
   }
