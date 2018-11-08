@@ -1,18 +1,3 @@
-// Load XML file
-// Remove all products that are not shoes
-// Remove anything not women's men's or kid's
-// Remove all brands that are not those specified
-// Remove duplicates (if any)
-
-// Calculate the percentage off between sale & reg price
-// Remove anything that is < 25% off
-
-// Sort by highest sales price (sale/current) price and keep the top 200
-
-// Create new content for tags (from title)
-// Create product urls from the name (replace ',','/',''',' ' .... w/ dashes)
-// Combine the long description w/ the button HTML & tracking link
-
 const fs = require(`fs`);
 const generate = require(`csv-generate`);
 const parse = require(`csv-parse`);
@@ -91,10 +76,19 @@ const transformDataFromFeed = () => {
     return product;
   });
 
+  // sort from highest to lowest price
+  products.sort((a, b) => b[6] - a[6]);
+  // take top 200
+  products.splice(0, products.length - 200))
+  console.log(products);
+
   /* At this point an array for each product contains the following as strings:
   [url, title, desc w/ html link, tags, categories, imageUrl, price] */
   return products;
 };
+
+transformDataFromFeed();
+
 
 function formatLink(link, affiliateName) {
   return `<p><h3 style="white-space: pre-wrap;"><strong>Buy now:</strong></h3></p><h3 style="white-space: pre-wrap;"><a href="${link}" target="_blank">${affiliateName}</a></h3>`;
@@ -142,7 +136,11 @@ const createCSV = (headers, dataset) => {
 
 
 // RUN
-const productData = transformDataFromFeed();
-const formattedData = formatForSS(productData);
-const csvFile = createCSV(squareSpaceHeaders, formattedData);
-fs.writeFileSync(`${__dirname}/../square-space-uploads/stockX.SS.csv`, csvFile, `utf8`);
+const run = () => {
+  const productData = transformDataFromFeed();
+  const formattedData = formatForSS(productData);
+  const csvFile = createCSV(squareSpaceHeaders, formattedData);
+  fs.writeFileSync(`${__dirname}/../square-space-uploads/stockX.SS.csv`, csvFile, `utf8`);
+};
+
+// run();
