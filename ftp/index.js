@@ -4,7 +4,7 @@ const colors = require(`colors`);
 const zlib = require(`zlib`);
 
 const { ftpPassword, userName } = require(`../pw.js`);
-const { stockX } = require(`./affiliateCodes.js`);
+const { stockXCode } = require(`./affiliateCodes.js`);
 const dateForFile = new Date().toISOString().split(`T`)[0];
 
 /* Download an individual data file from the Rakuten FTP */
@@ -20,14 +20,15 @@ const ftpDownload = async (affiliateName, affiliateFtpCode, ftpFileName, date) =
     console.log(`Connected to aftp.linksynergy.com!`.green.bold);
     console.log(`Server message: ${serverMessage}`);
     const fileStream = await ftp.get(`/${affiliateFtpCode}/${ftpFileName}`);
-    return new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       console.log(`${affiliateName} file saving to ftp-downloads...`.gray);
+      fileStream.once(`close`, resolve);
+      fileStream.once(`error`, reject);
       fileStream.pipe(
         fs.createWriteStream(`${__dirname}/../ftp-downloads/${affiliateName}-feed_${date}.txt.gz`),
       );
-      fileStream.once(`close`, resolve(ftp.end()));
-      fileStream.once(`error`, reject);
     });
+    return ftp.end();
   } catch (err) {
     console.log(err);
     ftp.end();
@@ -57,10 +58,11 @@ const unzipFile = (affiliateName, date) => {
   }
 };
 
-
 const stockXLocalName = `stockX`;
 const stockXFtpFileName = `43272_3559621_145043512_cmp.txt.gz`;
 
-
-// ftpDownload(stockXLocalName, stockX, stockXFtpFileName, dateForFile);
-// unzipFile(stockXLocalName, dateForFile);
+const runFtp = async () => {
+  const getFile = await ftpDownload(stockXLocalName, stockXCode, stockXFtpFileName, dateForFile);
+  unzipFile(stockXLocalName, dateForFile);
+};
+// runFtp();

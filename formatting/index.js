@@ -1,6 +1,4 @@
 const fs = require(`fs`);
-const generate = require(`csv-generate`);
-const parse = require(`csv-parse`);
 const { brands, squareSpaceHeaders } = require(`./utils.js`);
 const colors = require(`colors`);
 
@@ -64,13 +62,11 @@ const transformDataFromFeed = (filteredData) => {
   // Create product tags and URL
   products.map((item) => {
     const removeChars = item[0]
-      .replace(/"/g, ``)
-      .replace(/'/g, ``)
-      .replace(/\(|\)/g, ``);
+      .replace(/[^\w\s]/gi, ``) // remove all non-alphanumeric chars
+      .replace(/  +/g, ` `); // extra whitespace
 
     const tags = removeChars.split(` `).join(`, `);
     const url = removeChars
-      .replace(/\./g, `-`)
       .split(` `)
       .join(`-`);
     item.splice(2, 0, tags);
@@ -88,19 +84,27 @@ const transformDataFromFeed = (filteredData) => {
   console.log(`sorting by price...`.blue.bold);
   // sort from highest to lowest price
   products.sort((a, b) => b[6] - a[6]);
-  // take top 200
-  if (products.length > 200) products.splice(199, (products.length - 200));
+  // take top 200 - for now just 50 to test upload
+  if (products.length > 200) products.splice(50, (products.length - 50)); // (199, (products.length - 199))
+
+  // Fix image urls to begin with http:// NOT https:// --> SquareSpace requirement
+  products.map((product) => {
+    const httpLink = product[5].replace(/https/gi, `http`);
+    product[5] = httpLink;
+    return product;
+  });
 
   /* At this point an array for each product contains the following as strings:
   [url, title, desc w/ html link, tags, categories, imageUrl, price] */
   return products;
 };
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
+// helper func for formatting affiliate link code into product description
 function formatLink(link, affiliateName) {
   return `<p><h3 style="white-space: pre-wrap;"><strong>Buy now:</strong></h3></p><h3 style="white-space: pre-wrap;"><a href="${link}" target="_blank">${affiliateName}</a></h3>`;
 }
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 // Format for squareSpace upload csv format w/ correct order of empty rows
 const formatForSS = (formattedProductArray) => {
